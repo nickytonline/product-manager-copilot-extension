@@ -112,10 +112,14 @@ ${suggestion ? `## 3. User Suggestion\n\n${suggestion}\n` : ""}
 - The feature should be absurd but plausible in a playful way.
 - Should be generated in a humorous tone.
 `;
+          // Escape triple backticks in the PRD so they render as literal code fences
+          const safePrdMarkdown = prdMarkdown.replace(/```/g, "``\u0060");
           stream.write(
             createTextEvent("Here's your PRD document in markdown format:\n")
           );
-          stream.write(createTextEvent(prdMarkdown + "\n"));
+          stream.write(
+            createTextEvent("```markdown\n" + safePrdMarkdown + "\n```\n")
+          );
           delete brainstormingSessions[userId];
           stream.write(createDoneEvent());
           return;
