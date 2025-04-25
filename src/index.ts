@@ -92,7 +92,7 @@ app.post("/", async (c) => {
           // User accepted to generate PRD
           const featureIdea = brainstormingSessions[userId].lastIdea;
           const suggestion = brainstormingSessions[userId].lastSuggestion || "";
-          const today = new Date().toISOString().split("T")[0];
+          const [today] = new Date().toISOString().split("T");
           const prdMarkdown = `# Product Requirements Document (PRD)
 ### Project: **Wacky Product Manager Feature**
 **Author:** ${userId}
