@@ -80,15 +80,20 @@ app.post("/", async (c) => {
 
       // Check if user is in a brainstorming session
       if (brainstormingSessions[userId]) {
-        // Continue brainstorming session
-        if (userPrompt.includes("/done")) {
-          // If the user previously ran /prd, output PRD markdown
-          if (brainstormingSessions[userId].lastPrdRequest) {
-            const featureIdea = brainstormingSessions[userId].lastIdea;
-            const suggestion =
-              brainstormingSessions[userId].lastSuggestion || "";
-            const today = new Date().toISOString().split("T")[0];
-            const prdMarkdown = `# Product Requirements Document (PRD)
+        // Check for PRD confirmation response
+        const potentialConfirmationMessage = payload.messages?.findLast?.(
+          (m) =>
+            Array.isArray(m.copilot_confirmations) &&
+            m.copilot_confirmations.length > 0
+        );
+        const confirmationState =
+          potentialConfirmationMessage?.copilot_confirmations?.[0]?.state;
+        if (confirmationState === "accepted") {
+          // User accepted to generate PRD
+          const featureIdea = brainstormingSessions[userId].lastIdea;
+          const suggestion = brainstormingSessions[userId].lastSuggestion || "";
+          const today = new Date().toISOString().split("T")[0];
+          const prdMarkdown = `# Product Requirements Document (PRD)
 ### Project: **Wacky Product Manager Feature**
 **Author:** ${userId}
 **Date:** ${today}
@@ -107,29 +112,43 @@ ${suggestion ? `## 3. User Suggestion\n\n${suggestion}\n` : ""}
 - The feature should be absurd but plausible in a playful way.
 - Should be generated in a humorous tone.
 `;
-            stream.write(
-              createTextEvent("Here's your PRD document in markdown format:\n")
-            );
-            stream.write(createTextEvent(prdMarkdown + "\n"));
-          } else {
-            stream.write(
-              createTextEvent(
-                "Awesome! Glad you're happy with the feature. If you want to brainstorm again, just type '/feature'."
-              )
-            );
-          }
+          stream.write(
+            createTextEvent("Here's your PRD document in markdown format:\n")
+          );
+          stream.write(createTextEvent(prdMarkdown + "\n"));
           delete brainstormingSessions[userId];
           stream.write(createDoneEvent());
           return;
-        } else if (userPrompt.includes("/prd")) {
-          // Mark that the user wants a PRD for the current idea
-          brainstormingSessions[userId].lastPrdRequest = true;
+        } else if (
+          confirmationState === "rejected" ||
+          confirmationState === "dismissed"
+        ) {
+          // User rejected or dismissed PRD generation
           stream.write(
             createTextEvent(
-              "When you're ready, type '/done' and I'll convert your idea into a markdown PRD document!"
+              "Awesome! Glad you're happy with the feature. If you want to brainstorm again, just type '/feature'."
             )
           );
+          delete brainstormingSessions[userId];
           stream.write(createDoneEvent());
+          return;
+        }
+        // Continue brainstorming session
+        if (userPrompt.includes("/done")) {
+          // Ask for confirmation to generate PRD
+          stream.write(
+            createConfirmationEvent({
+              id: `prd-confirmation-${userId}-${Date.now()}`,
+              title: "Generate PRD Document?",
+              message:
+                "Would you like to generate a markdown Product Requirements Document (PRD) for your finalized idea?",
+              metadata: {
+                user: userId,
+                featureIdea: brainstormingSessions[userId].lastIdea,
+                suggestion: brainstormingSessions[userId].lastSuggestion || "",
+              },
+            })
+          );
           return;
         } else if (userPrompt.includes("/new")) {
           brainstormingSessions[userId].promptCount++;
@@ -141,8 +160,6 @@ ${suggestion ? `## 3. User Suggestion\n\n${suggestion}\n` : ""}
           } Keep it playful!`;
           const { message } = await prompt(promptText, { token: tokenForUser });
           brainstormingSessions[userId].lastIdea = message.content;
-          // Reset PRD request flag for new idea
-          brainstormingSessions[userId].lastPrdRequest = false;
           stream.write(createTextEvent(`Here's another idea:\n`));
           stream.write(createTextEvent(message.content + "\n"));
           stream.write(
