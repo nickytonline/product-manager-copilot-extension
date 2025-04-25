@@ -1,0 +1,25 @@
+{
+  "name": "copilot-extension-template",
+  "scripts": {
+    "dev": "node --watch --experimental-strip-types src/index.ts",
+    "start": "node --experimental-strip-types src/index.ts"
+  },
+  "dependencies": {
+    "@copilot-extensions/preview-sdk": "^5.0.1",
+    "@hono/node-server": "^1.13.8",
+    "@octokit/core": "^6.1.4",
+    "hono": "^4.7.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.8"
+  },
+  "engines": {
+    "node": ">=22.13.1"
+  },
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A starter template for building GitHub Copilot extensions using the Preview SDK and Hono framework",
+  "main": "index.js",
+  "author": "Nick Taylor <nick@nickyt.co>",
+  "license": "MIT"
+}
