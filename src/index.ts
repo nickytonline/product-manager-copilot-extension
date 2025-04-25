@@ -123,10 +123,7 @@ ${suggestion ? `## 3. User Suggestion\n\n${suggestion}\n` : ""}
           delete brainstormingSessions[userId];
           stream.write(createDoneEvent());
           return;
-        } else if (
-          confirmationState === "rejected" ||
-          confirmationState === "dismissed"
-        ) {
+        } else if (!confirmationState || confirmationState === "dismissed") {
           // User rejected or dismissed PRD generation
           stream.write(
             createTextEvent(
