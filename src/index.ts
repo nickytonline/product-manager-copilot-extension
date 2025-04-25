@@ -100,7 +100,7 @@ app.post("/", async (c) => {
 
 ## 1. Objective
 
-Suggest a wacky and humorous product feature idea for the Wacky Product Manager Copilot extension.
+Suggest a wacky and humorous product feature idea.
 
 ## 2. Feature Idea
 
